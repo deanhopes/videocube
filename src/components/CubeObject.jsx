@@ -1,7 +1,8 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
-import { useThree } from '@react-three/fiber';
+// import { useThree } from '@react-three/fiber';
 import { Euler, Quaternion, Vector3 } from 'three';
 import { useSpring, animated } from '@react-spring/three';
+import { CameraShake } from '@react-three/drei';
 
 const FACE_IDS = {
   FRONT: 0,
@@ -16,7 +17,8 @@ const faceColors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange'];
 
 const CubeObject = ({ onFaceChange }) => {
   const meshRef = useRef();
-  const { size, camera } = useThree();
+  // neither size or camera is being used, is this needed
+  // const { size, camera } = useThree();
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [currentRotation, setCurrentRotation] = useState(new Euler(0, 0, 0));
