@@ -8,12 +8,12 @@ import { CUBE_FACES } from './cubeFaceData';
 const AnimatedText = animated(Text);
 
 const VideoCube = () => {
-  const [activeFace, setActiveFace] = useState(0);
+  const [activeFace, setActiveFace] = useState(5);
   const [textSpring, textApi] = useSpring(() => ({
-    position: [0, 2, 2],
-    scale: [1, 1, 1],
+    position: [0, 1.2, 4],
+    scale: [1.2, 1.2, 1.2],
     opacity: 1,
-    config: { mass: 2, tension: 440, friction: 40 },
+    config: { mass: 2, tension: 800, friction: 40 },
   }));
 
   const handleFaceChange = useCallback(
@@ -21,8 +21,8 @@ const VideoCube = () => {
       console.log('Active face changed to:', faceIndex);
       setActiveFace(faceIndex);
       textApi.start({
-        from: { position: [0, 2, 2], scale: [0.8, 0.8, 0.8], opacity: 0 },
-        to: { position: [0, 2, 2], scale: [1, 1, 1], opacity: 1 },
+        from: { position: [0, 1.2, 4], scale: [0.8, 0.8, 0.8], opacity: 0 },
+        to: { position: [0, 1.2, 4], scale: [1.2, 1.2, 1.2], opacity: 1 },
       });
     },
     [textApi]
@@ -30,29 +30,21 @@ const VideoCube = () => {
 
   const faceTitles = Object.values(CUBE_FACES).map((face) => face.title);
 
-  useEffect(() => {
-    console.log(
-      'Current active face:',
-      activeFace,
-      'Title:',
-      faceTitles[activeFace]
-    );
-  }, [activeFace, faceTitles]);
+  // useEffect(() => {
+  //   console.log(
+  //     'Current active face:',
+  //     activeFace,
+  //     'Title:',
+  //     faceTitles[activeFace]
+  //   );
+  // }, [activeFace, faceTitles]);
 
   return (
-    <Canvas shadows camera={{ fov: 35, position: [0, 0, 12] }} dpr={[1, 1.5]}>
-      <ambientLight intensity={0.2} />
-      <spotLight
-        intensity={1}
-        angle={0.8}
-        penumbra={1}
-        position={[0, 0, 5]}
-        castShadow
-        shadow-mapSize={[512, 512]}
-      />
+    <Canvas shadows camera={{ fov: 35, position: [0, 0, 10] }} dpr={[1, 1.5]}>
+      {/* <ambientLight intensity={0} /> */}
 
       <Suspense fallback={<Html center>Loading...</Html>}>
-        <CubeObject position={[0, 0, 0]} onFaceChange={handleFaceChange} />
+        <CubeObject onFaceChange={handleFaceChange} />
       </Suspense>
 
       <AnimatedText
@@ -63,7 +55,7 @@ const VideoCube = () => {
         fontSize={0.5}
         maxWidth={200}
         lineHeight={1}
-        letterSpacing={0.02}
+        letterSpacing={-0.02}
         textAlign="center"
         font="src/assets/NHaasGroteskDSPro-55Rg.otf"
         anchorX="center"
@@ -72,14 +64,9 @@ const VideoCube = () => {
         {faceTitles[activeFace]}
       </AnimatedText>
 
-      {/* <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -4, 0]}>
-        <planeGeometry args={[10, 10]} />
-        <shadowMaterial opacity={0.4} />
-      </mesh> */}
-
       <color attach="background" args={['#131313']} />
 
-      <Environment preset="city" />
+      <Environment preset="studio" />
 
       <ContactShadows
         position={[0, -2.5, 0]}
