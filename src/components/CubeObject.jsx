@@ -11,18 +11,15 @@ const CubeObject = ({ onFaceChange }) => {
   const isDragging = useRef(false);
   const rotationAxis = useRef(new Vector3());
   const currentRotation = useRef(new Euler());
-
   const [activeFace, setActiveFace] = useState(0);
 
-  const { camera } = useThree();
-
   const faceNormals = [
-    new Vector3(0, 0, 1), // front
-    new Vector3(1, 0, 0), // right
-    new Vector3(0, 0, -1), // back
-    new Vector3(-1, 0, 0), // left
-    new Vector3(0, 1, 0), // top
-    new Vector3(0, -1, 0), // bottom
+    new Vector3(0, 0, 1),
+    new Vector3(1, 0, 0),
+    new Vector3(0, 0, -1),
+    new Vector3(-1, 0, 0),
+    new Vector3(0, 1, 0),
+    new Vector3(0, -1, 0),
   ];
 
   const [spring, api] = useSpring(() => ({
@@ -31,8 +28,10 @@ const CubeObject = ({ onFaceChange }) => {
   }));
 
   const rotateAroundWorldAxis = (object, axis, radians) => {
-    const rotWorldMatrix = new Matrix4();
-    rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+    const rotWorldMatrix = new Matrix4().makeRotationAxis(
+      axis.normalize(),
+      radians
+    );
     object.quaternion.premultiply(
       new Quaternion().setFromRotationMatrix(rotWorldMatrix)
     );
@@ -43,7 +42,6 @@ const CubeObject = ({ onFaceChange }) => {
     event.target.setPointerCapture(event.pointerId);
     setDragStart({ x: event.clientX, y: event.clientY });
     currentRotation.current.copy(meshRef.current.rotation);
-    console.log('Pointer Down', { x: event.clientX, y: event.clientY });
   }, []);
 
   const onPointerMove = useCallback(
@@ -52,19 +50,12 @@ const CubeObject = ({ onFaceChange }) => {
 
       const dragX = event.clientX - dragStart.x;
       const dragY = event.clientY - dragStart.y;
-
       const rotationSensitivity = 0.01;
-
       const axis = Math.abs(dragX) > Math.abs(dragY) ? 'y' : 'x';
       const sign = Math.abs(dragX) > Math.abs(dragY) ? dragX : dragY;
       const rotationAmount = sign * rotationSensitivity;
 
-      if (axis === 'y') {
-        rotationAxis.current.set(0, 1, 0); // Rotate around Y-axis
-      } else {
-        rotationAxis.current.set(1, 0, 0); // Rotate around X-axis
-      }
-
+      rotationAxis.current.set(axis === 'y' ? 0 : 1, axis === 'y' ? 1 : 0, 0);
       rotateAroundWorldAxis(
         meshRef.current,
         rotationAxis.current,
@@ -73,7 +64,6 @@ const CubeObject = ({ onFaceChange }) => {
 
       setDragStart({ x: event.clientX, y: event.clientY });
       currentRotation.current.copy(meshRef.current.rotation);
-      console.log('Pointer Move', { x: event.clientX, y: event.clientY });
     },
     [dragStart]
   );
@@ -83,9 +73,7 @@ const CubeObject = ({ onFaceChange }) => {
       if (isDragging.current) {
         isDragging.current = false;
         event.target.releasePointerCapture(event.pointerId);
-        console.log('Pointer Up', { x: event.clientX, y: event.clientY });
 
-        // Determine the new active face using the cube's rotation
         let maxDot = -Infinity;
         let newActiveFace = 0;
 
@@ -93,7 +81,7 @@ const CubeObject = ({ onFaceChange }) => {
           const rotatedNormal = normal
             .clone()
             .applyQuaternion(meshRef.current.quaternion);
-          const dot = rotatedNormal.dot(new Vector3(0, 0, -1)); // Use cube's local forward direction
+          const dot = rotatedNormal.dot(new Vector3(0, 0, -1));
           if (dot > maxDot) {
             maxDot = dot;
             newActiveFace = index;
@@ -102,7 +90,6 @@ const CubeObject = ({ onFaceChange }) => {
 
         setActiveFace(newActiveFace);
 
-        // Snaps the cube's rotation to the nearest 90-degree angle
         const snappedRotation = new Euler(
           Math.round(meshRef.current.rotation.x / (Math.PI / 2)) *
             (Math.PI / 2),
@@ -111,7 +98,6 @@ const CubeObject = ({ onFaceChange }) => {
           Math.round(meshRef.current.rotation.z / (Math.PI / 2)) * (Math.PI / 2)
         );
 
-        // Animate the cube to the snapped rotation
         api.start({
           rotation: [snappedRotation.x, snappedRotation.y, snappedRotation.z],
           from: {
@@ -123,19 +109,14 @@ const CubeObject = ({ onFaceChange }) => {
           },
           onRest: () => onFaceChange(newActiveFace),
         });
-
-        console.log(`Active face changed to: ${newActiveFace}`);
       }
     },
     [onFaceChange, api, faceNormals]
   );
 
-  // Update the mesh's rotation every frame
   useFrame(() => {
     if (meshRef.current) {
-      meshRef.current.rotation.x = spring.rotation.get()[0];
-      meshRef.current.rotation.y = spring.rotation.get()[1];
-      meshRef.current.rotation.z = spring.rotation.get()[2];
+      meshRef.current.rotation.set(...spring.rotation.get());
     }
   });
 
@@ -153,7 +134,7 @@ const CubeObject = ({ onFaceChange }) => {
           attach={`material-${index}`}
           color={color}
           emissive={color}
-          emissiveIntensity={0.3}
+          emissiveIntensity={0.8}
           toneMapped={false}
         />
       ))}
