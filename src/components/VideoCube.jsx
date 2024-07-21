@@ -22,7 +22,7 @@ const VideoCube = () => {
       console.log('Active face changed to:', faceIndex);
       setActiveFace(faceIndex);
       textApi.start({
-        from: { position: [0, 2, 2], scale: [0.5, 0.5, 0.5], opacity: 0 },
+        from: { position: [0, 2, 2], scale: [0.8, 0.8, 0.8], opacity: 0 },
         to: { position: [0, 2, 2], scale: [1, 1, 1], opacity: 1 },
       });
     },
@@ -34,9 +34,9 @@ const VideoCube = () => {
       <ambientLight intensity={0.2} />
       <spotLight
         intensity={1}
-        angle={0.1}
+        angle={0.8}
         penumbra={1}
-        position={[5, 5, 5]}
+        position={[0, 0, 5]}
         castShadow
         shadow-mapSize={[512, 512]}
       />
@@ -53,7 +53,7 @@ const VideoCube = () => {
         lineHeight={1}
         letterSpacing={0.02}
         textAlign="center"
-        font="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff"
+        font="src/assets/NHaasGroteskDSPro-55Rg.otf"
         anchorX="center"
         anchorY="middle"
       >
