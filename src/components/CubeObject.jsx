@@ -232,7 +232,34 @@ const CubeObject = ({ onFaceChange }) => {
     <animated.mesh
       ref={meshRef}
       rotation={spring.rotation}
-      onPointerDown={onPointerDown}
+      onPointerDown={(event) => {
+        onPointerDown(event);
+        document.body.style.cursor = 'grabbing';
+      }}
+      onPointerOver={() => {
+        if (!isDragging) {
+          document.body.style.cursor = 'grab';
+        }
+      }}
+      onPointerOut={() => {
+        if (!isDragging) {
+          document.body.style.cursor = 'default';
+        }
+      }}
+      onPointerUp={(event) => {
+        setIsDragging(false);
+        const meshBounds = event.target.getBoundingClientRect();
+        if (
+          event.clientX >= meshBounds.left &&
+          event.clientX <= meshBounds.right &&
+          event.clientY >= meshBounds.top &&
+          event.clientY <= meshBounds.bottom
+        ) {
+          document.body.style.cursor = 'grab';
+        } else {
+          document.body.style.cursor = 'default';
+        }
+      }}
     >
       <Box args={[2, 2, 2]} material={materials} />
       {/* Add face indicators using Html component from drei */}

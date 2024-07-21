@@ -4,7 +4,7 @@ export const CUBE_FACES = {
     videoSource:
       '/src/assets/videos/Laifen Wave electric toothbrushes video (1).mp4',
     fallbackColor: 'yellow',
-    title: 'Toothbrushes 1',
+    title: 'Toothbrush 1',
   },
   RIGHT: {
     id: 1,
@@ -17,7 +17,7 @@ export const CUBE_FACES = {
     videoSource:
       '/src/assets/videos/Laifen Wave electric toothbrushes video.mp4',
     fallbackColor: 'purple',
-    title: 'Toothbrushes 2',
+    title: 'Toothbrush 2',
   },
   TOP: {
     id: 3,
@@ -38,3 +38,5 @@ export const CUBE_FACES = {
     title: 'Haptics',
   },
 };
+
+// I had to do a bit of a botch job here with the order of things. They don't match the code in the other file but it works...

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Suspense, useEffect } from 'react';
+import React, { useState, useCallback, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, ContactShadows, Text, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
@@ -18,7 +18,6 @@ const VideoCube = () => {
 
   const handleFaceChange = useCallback(
     (faceIndex) => {
-      console.log('Active face changed to:', faceIndex);
       setActiveFace(faceIndex);
       textApi.start({
         from: { position: [0, 1.2, 4], scale: [0.8, 0.8, 0.8], opacity: 0 },
@@ -30,19 +29,8 @@ const VideoCube = () => {
 
   const faceTitles = Object.values(CUBE_FACES).map((face) => face.title);
 
-  // useEffect(() => {
-  //   console.log(
-  //     'Current active face:',
-  //     activeFace,
-  //     'Title:',
-  //     faceTitles[activeFace]
-  //   );
-  // }, [activeFace, faceTitles]);
-
   return (
     <Canvas shadows camera={{ fov: 35, position: [0, 0, 10] }} dpr={[1, 1.5]}>
-      {/* <ambientLight intensity={0} /> */}
-
       <Suspense fallback={<Html center>Loading...</Html>}>
         <CubeObject onFaceChange={handleFaceChange} />
       </Suspense>
