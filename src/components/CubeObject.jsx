@@ -1,130 +1,190 @@
-import React, { useRef, useCallback, useState } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { Vector3, Quaternion, Euler, Matrix4 } from 'three';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
+import { useThree } from '@react-three/fiber';
+import { Euler, Quaternion, Vector3 } from 'three';
 import { useSpring, animated } from '@react-spring/three';
+
+const FACE_IDS = {
+  FRONT: 0,
+  BACK: 1,
+  LEFT: 2,
+  RIGHT: 3,
+  TOP: 4,
+  BOTTOM: 5,
+};
 
 const faceColors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange'];
 
 const CubeObject = ({ onFaceChange }) => {
   const meshRef = useRef();
-  const isDragging = useRef(false);
-  const mousePosition = useRef({ x: 0, y: 0 });
-  const [activeFace, setActiveFace] = useState(0);
-
-  const { camera, size } = useThree();
-
-  const faceNormals = [
-    new Vector3(0, 0, 1),
-    new Vector3(1, 0, 0),
-    new Vector3(0, 0, -1),
-    new Vector3(-1, 0, 0),
-    new Vector3(0, 1, 0),
-    new Vector3(0, -1, 0),
-  ];
+  const { size, camera } = useThree();
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [currentRotation, setCurrentRotation] = useState(new Euler(0, 0, 0));
+  const [finalRotation, setFinalRotation] = useState(new Euler(0, 0, 0));
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [activeFace, setActiveFace] = useState(FACE_IDS.FRONT);
 
   const [spring, api] = useSpring(() => ({
     rotation: [0, 0, 0],
-    config: { mass: 1, tension: 280, friction: 20 },
+    config: { mass: 1, tension: 500, friction: 30 },
   }));
 
-  const rotateAroundWorldAxis = useCallback((object, axis, radians) => {
-    const rotWorldMatrix = new Matrix4().makeRotationAxis(
-      axis.normalize(),
-      radians
-    );
-    object.quaternion.premultiply(
-      new Quaternion().setFromRotationMatrix(rotWorldMatrix)
-    );
-  }, []);
+  const determineActiveFace = useCallback((rotation) => {
+    const faceNormals = [
+      new Vector3(0, 0, 1), // front
+      new Vector3(0, 0, -1), // back
+      new Vector3(-1, 0, 0), // left
+      new Vector3(1, 0, 0), // right
+      new Vector3(0, 1, 0), // top
+      new Vector3(0, -1, 0), // bottom
+    ];
 
-  const onPointerDown = useCallback((event) => {
-    isDragging.current = true;
-    mousePosition.current = { x: event.clientX, y: event.clientY };
-    event.target.setPointerCapture(event.pointerId);
-  }, []);
-
-  const onPointerMove = useCallback((event) => {
-    mousePosition.current = { x: event.clientX, y: event.clientY };
-  }, []);
-
-  const onPointerUp = useCallback(() => {
-    if (isDragging.current) {
-      isDragging.current = false;
-      snapToNearestFace();
-    }
-  }, []);
-
-  const snapToNearestFace = useCallback(() => {
     let maxDot = -Infinity;
-    let newActiveFace = 0;
+    let activeFace = FACE_IDS.FRONT;
 
     faceNormals.forEach((normal, index) => {
       const rotatedNormal = normal
         .clone()
-        .applyQuaternion(meshRef.current.quaternion);
+        .applyQuaternion(new Quaternion().setFromEuler(rotation));
       const dot = rotatedNormal.dot(new Vector3(0, 0, -1));
+
       if (dot > maxDot) {
         maxDot = dot;
-        newActiveFace = index;
+        activeFace = index;
       }
     });
 
-    setActiveFace(newActiveFace);
+    return activeFace;
+  }, []);
 
-    const snappedRotation = new Euler(
-      Math.round(meshRef.current.rotation.x / (Math.PI / 2)) * (Math.PI / 2),
-      Math.round(meshRef.current.rotation.y / (Math.PI / 2)) * (Math.PI / 2),
-      Math.round(meshRef.current.rotation.z / (Math.PI / 2)) * (Math.PI / 2)
+  const snapToNearestFace = useCallback((rotation) => {
+    return new Euler(
+      Math.round(rotation.x / (Math.PI / 2)) * (Math.PI / 2),
+      Math.round(rotation.y / (Math.PI / 2)) * (Math.PI / 2),
+      Math.round(rotation.z / (Math.PI / 2)) * (Math.PI / 2)
     );
+  }, []);
 
-    api.start({
-      rotation: [snappedRotation.x, snappedRotation.y, snappedRotation.z],
-      config: { tension: 300, friction: 40 },
-      onRest: () => onFaceChange(newActiveFace),
-    });
-  }, [api, onFaceChange, faceNormals]);
+  const onPointerDown = useCallback(
+    (event) => {
+      if (isAnimating) return;
 
-  useFrame((state, delta) => {
-    if (meshRef.current && isDragging.current) {
-      // Calculate the center of the screen
-      const centerX = size.width / 2;
-      const centerY = size.height / 2;
+      setIsDragging(true);
+      setDragStart({ x: event.clientX, y: event.clientY });
+      setCurrentRotation(new Euler().copy(meshRef.current.rotation));
+    },
+    [isAnimating]
+  );
 
-      // Calculate the mouse position relative to the center
-      const relativeX = (mousePosition.current.x - centerX) / centerX;
-      const relativeY = (mousePosition.current.y - centerY) / centerY;
+  const onPointerMove = useCallback(
+    (event) => {
+      if (!isDragging || !meshRef.current || isAnimating) return;
 
-      // Calculate rotation speed based on distance from center
-      const rotationSpeed = 0.05; // Adjust this value to control rotation speed
-      const rotationX = -relativeY * rotationSpeed;
-      const rotationY = relativeX * rotationSpeed;
+      const deltaX = event.clientX - dragStart.x;
+      const deltaY = event.clientY - dragStart.y;
 
-      // Apply rotation
-      rotateAroundWorldAxis(meshRef.current, new Vector3(1, 0, 0), rotationX);
-      rotateAroundWorldAxis(meshRef.current, new Vector3(0, 1, 0), rotationY);
-    } else if (!isDragging.current) {
-      // Use spring animation when not dragging
-      meshRef.current.rotation.set(...spring.rotation.get());
+      const newRotation = new Euler(
+        currentRotation.x - deltaY * 0.0005,
+        currentRotation.y - deltaX * 0.0005,
+        currentRotation.z
+      );
+
+      meshRef.current.rotation.copy(newRotation);
+      setCurrentRotation(newRotation);
+
+      const newActiveFace = determineActiveFace(newRotation);
+      if (newActiveFace !== activeFace) {
+        setActiveFace(newActiveFace);
+        onFaceChange(newActiveFace);
+      }
+    },
+    [
+      isDragging,
+      dragStart,
+      currentRotation,
+      onFaceChange,
+      activeFace,
+      determineActiveFace,
+      isAnimating,
+    ]
+  );
+
+  const onPointerUp = useCallback(() => {
+    if (isAnimating) return;
+
+    setIsDragging(false);
+    if (meshRef.current) {
+      const snappedRotation = snapToNearestFace(currentRotation);
+      setIsAnimating(true);
+
+      api.start({
+        from: {
+          rotation: [currentRotation.x, currentRotation.y, currentRotation.z],
+        },
+        to: {
+          rotation: [snappedRotation.x, snappedRotation.y, snappedRotation.z],
+        },
+        onRest: () => {
+          setFinalRotation(snappedRotation);
+          setIsAnimating(false);
+          const finalActiveFace = determineActiveFace(snappedRotation);
+          if (finalActiveFace !== activeFace) {
+            setActiveFace(finalActiveFace);
+            onFaceChange(finalActiveFace);
+          }
+        },
+      });
     }
-  });
+  }, [
+    api,
+    currentRotation,
+    onFaceChange,
+    activeFace,
+    determineActiveFace,
+    snapToNearestFace,
+    isAnimating,
+  ]);
+
+  useEffect(() => {
+    const handleWindowMouseMove = (event) => {
+      if (isDragging) {
+        onPointerMove(event);
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      if (isDragging) {
+        onPointerUp();
+      }
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [isDragging, onPointerMove, onPointerUp]);
+
+  useEffect(() => {
+    if (!isAnimating && meshRef.current) {
+      meshRef.current.rotation.copy(finalRotation);
+    }
+  }, [isAnimating, finalRotation]);
 
   return (
     <animated.mesh
       ref={meshRef}
+      rotation={spring.rotation}
       onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerUp}
     >
-      <boxGeometry args={[1, 1, 1]} />
+      <boxGeometry args={[2, 2, 2]} />
       {faceColors.map((color, index) => (
         <meshStandardMaterial
           key={index}
           attach={`material-${index}`}
           color={color}
-          emissive={color}
-          emissiveIntensity={0.8}
-          toneMapped={false}
         />
       ))}
     </animated.mesh>
