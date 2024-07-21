@@ -1,10 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Environment, ContactShadows, Text } from '@react-three/drei';
+import { Environment, ContactShadows, Text, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
 import CubeObject from './CubeObject';
-
-const faceTexts = ['Front', 'Back', 'Left', 'Right', 'Top', 'Bottom'];
+import { CUBE_FACES } from './cubeFaceData';
 
 const AnimatedText = animated(Text);
 
@@ -29,6 +28,17 @@ const VideoCube = () => {
     [textApi]
   );
 
+  const faceTitles = Object.values(CUBE_FACES).map((face) => face.title);
+
+  useEffect(() => {
+    console.log(
+      'Current active face:',
+      activeFace,
+      'Title:',
+      faceTitles[activeFace]
+    );
+  }, [activeFace, faceTitles]);
+
   return (
     <Canvas shadows camera={{ fov: 35, position: [0, 0, 12] }} dpr={[1, 1.5]}>
       <ambientLight intensity={0.2} />
@@ -41,7 +51,9 @@ const VideoCube = () => {
         shadow-mapSize={[512, 512]}
       />
 
-      <CubeObject position={[0, 1, 0]} onFaceChange={handleFaceChange} />
+      <Suspense fallback={<Html center>Loading...</Html>}>
+        <CubeObject position={[0, 0, 0]} onFaceChange={handleFaceChange} />
+      </Suspense>
 
       <AnimatedText
         position={textSpring.position}
@@ -57,22 +69,22 @@ const VideoCube = () => {
         anchorX="center"
         anchorY="middle"
       >
-        {faceTexts[activeFace]}
+        {faceTitles[activeFace]}
       </AnimatedText>
 
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
-        <planeGeometry args={[100, 100]} />
+      {/* <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -4, 0]}>
+        <planeGeometry args={[10, 10]} />
         <shadowMaterial opacity={0.4} />
-      </mesh>
+      </mesh> */}
 
-      <color attach="background" args={['#2d2d2d']} />
+      <color attach="background" args={['#131313']} />
 
       <Environment preset="city" />
 
       <ContactShadows
-        position={[0, -1.99, 0]}
-        opacity={0.5}
-        scale={10}
+        position={[0, -2.5, 0]}
+        opacity={1.0}
+        scale={20}
         blur={2}
         far={3}
         resolution={256}
