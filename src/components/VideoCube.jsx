@@ -30,9 +30,9 @@ const VideoCube = () => {
   const faceTitles = Object.values(CUBE_FACES).map((face) => face.title);
 
   return (
-    <Canvas shadows camera={{ fov: 35, position: [0, 0, 10] }} dpr={[1, 1.5]}>
+    <Canvas shadows camera={{ fov: 35, position: [0, 0, 12] }} dpr={[1, 1.5]}>
       <Suspense fallback={<Html center>Loading...</Html>}>
-        <CubeObject onFaceChange={handleFaceChange} />
+        <CubeObject onFaceChange={handleFaceChange} scale={1.5} />
       </Suspense>
 
       <AnimatedText
