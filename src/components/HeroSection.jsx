@@ -54,7 +54,7 @@ const HeroSection = () => {
             lineHeight={1}
             letterSpacing={-0.02}
             textAlign="center"
-            font="src/assets/NHaasGroteskDSPro-55Rg.otf"
+            font="/assets/NHaasGroteskDSPro-55Rg.otf"
             anchorX="center"
             anchorY="middle"
           >
